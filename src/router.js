@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import TodosPage from "./pages/TodosPage.vue";
 import NotFound from "./pages/NotFound.vue";
 import AuthForm from "./pages/auth/UserAuth.vue";
+import PasswordAuthForm from "./pages/auth/PasswordAuth.vue";
+import GoogleAuthForm from "./pages/auth/GoogleAuth.vue";
 //import store from "./store/index.js";
 import { useStore } from "./store";
 const router = createRouter({
@@ -10,9 +12,19 @@ const router = createRouter({
   routes: [
     { path: "/", redirect: "/todos" },
     { path: "/todos", name: "todos", component: TodosPage },
-    //      { path: '/auth', component: AuthForm, name: 'auth' },
+    {
+      path: "/auth",
+      component: AuthForm,
+      name: "auth",
+    },
+    {
+      path: "/auth/password",
+      component: PasswordAuthForm,
+      name: "passwordauth",
+    },
+    { path: "/auth/google", component: GoogleAuthForm, name: "googleauth" },
+
     { path: "/:notFound(.*)", component: NotFound },
-    { path: "/auth", component: AuthForm, name: "auth" },
   ],
 });
 
@@ -24,22 +36,22 @@ const router = createRouter({
 //     }
 //   });
 
-router.beforeEach(async (to, _from, _next) => {
+router.beforeEach(async (to, _from, next) => {
   console.log("to:", to);
+
   const store = useStore();
-  if (to.name === "auth") {
+  if (to.fullPath.includes("auth")) {
     if (store.isAuthenticated) {
-      _next({ name: "todos" });
+      next({ name: "todos" });
+      return;
     }
   } else {
-    //const currentUser = await getCurrentUser();
-    //console.log("store:", store.isAuthenticated, to);
-    if (!store.isAuthenticated && to.name !== "auth") {
-      //if (!currentUser) {
-      _next({ name: "auth" });
+    if (!store.isAuthenticated && !to.fullPath.includes("auth")) {
+      next({ name: "auth" });
+      return;
     }
   }
-  _next();
+  next();
 });
 
 export default router;
