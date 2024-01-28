@@ -2,6 +2,8 @@
 
 ## Project setup
 
+use this to install all the needed node_modules
+
 ```
 npm install
 ```
