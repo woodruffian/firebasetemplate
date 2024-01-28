@@ -22,14 +22,17 @@ import { auth } from "../../firebaseApp";
 import { ref } from "vue";
 //import { useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { useStore } from '../../store/index.js'
+import { useRoute, useRouter } from 'vue-router';
 
 import {
     signInWithPopup,
     //signOut,
     GoogleAuthProvider,
-    signInWithRedirect
+    //signInWithRedirect, getRedirectResult
 } from 'firebase/auth'
 //import { ref as dbRef } from "firebase/database";
+const router = useRouter();
+const route = useRoute();
 const googleAuthProvider = new GoogleAuthProvider()
 googleAuthProvider.addScope('profile')
 googleAuthProvider.addScope('email')
@@ -39,19 +42,82 @@ const error = ref(null);
 
 async function signinPopup() {
     console.log('signinPopup', auth);
+    // const yo = window.confirm(store.loginAttempts);
+    // console.log('yo', yo);
+    if (store.loginAttempts > 3) {
+        const userWantsToContinue = window.confirm('Too many login attempts. Do you want to continue?');
+        if (!userWantsToContinue) {
+            return;
+        }
+        error.value = 'Too many login attempts, please try again later.'
+        return;
+    }
+
+    //signinWithRedirect was stuck in a loop.  NOt sure why.
+    //but the store.loginAttempts was NOT incrementing.
+
+    // await signInWithRedirect(auth, googleAuthProvider);
+    // // This will trigger a full page redirect away from your app
+
+    // // After returning from the redirect when your app initializes you can obtain the result
+    // const result = await getRedirectResult(auth);
+    // if (result) {
+    //     console.log('result (userCredential?)', result);
+    //     // This is the signed-in user
+    //     const user = result.user;
+    //     await store.loginWithUser(user);
+    //     // This gives you a Facebook Access Token.
+    //     //const credential = provider.credentialFromResult(auth, result);
+    //     //const token = credential.accessToken;
+    // }
+
+
     //error.value = null
-    await signInWithRedirect(auth, googleAuthProvider);
-    const user = signInWithPopup(auth, googleAuthProvider).catch((reason) => {
+    //await signInWithRedirect(auth, googleAuthProvider);
+    const userCredential = await signInWithPopup(auth, googleAuthProvider).catch((reason) => {
         console.error('Failed sign', reason)
         error.value = reason
     })
+    const user = userCredential.user;
     console.log('user', user);
-    store.setUser({
-        id: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL
-    })
+    await store.loginWithUser(userCredential.user);
+
+    // store.setUser({
+    //     id: user.uid,
+    //     email: user.email,
+    //     displayName: user.displayName,
+    //     photoURL: user.photoURL
+    // })
+
+
+    const redirectUrl = '/' + (route.query.redirect || 'todos');
+    router.replace(redirectUrl);
+
+    /*  facebook example 
+
+// Sign in using a redirect.
+const provider = new FacebookAuthProvider();
+// You can add additional scopes to the provider:
+provider.addScope('user_birthday');
+// Start a sign in process for an unauthenticated user.
+await signInWithRedirect(auth, provider);
+// This will trigger a full page redirect away from your app
+
+// After returning from the redirect when your app initializes you can obtain the result
+const result = await getRedirectResult(auth);
+if (result) {
+  // This is the signed-in user
+  const user = result.user;
+  // This gives you a Facebook Access Token.
+  const credential = provider.credentialFromResult(auth, result);
+  const token = credential.accessToken;
+}
+// As this API can be used for sign-in, linking and reauthentication,
+// check the operationType to determine what triggered this redirect
+// operation.
+const operationType = result.operationType;
+
+    */
 
 }
 

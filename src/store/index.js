@@ -6,6 +6,7 @@ import {
   //browserSessionPersistence,
 } from "firebase/auth";
 import { auth } from "../firebaseApp";
+//import dayjs from "dayjs";
 //import coachesModule from './modules/coaches/index.js';
 //import requestsModule from './modules/requests/index.js';
 //import { authModule } from "./modules/auth/index.js";
@@ -16,12 +17,18 @@ export const useStore = defineStore("user", {
     userId: null,
     uid: null,
     token: null,
+    //loginAttempts: 0,
     //tokenExpiration: null,
     setAutoLogout: false,
   }),
   getters: {
     isAuthenticated() {
       return !!this.token;
+    },
+
+    loginAttempts() {
+      const attempts = localStorage.getItem("loginAttempts");
+      return parseInt(attempts) || 0;
     },
     // userId(state) {
     //   return state.userId;
@@ -54,6 +61,8 @@ export const useStore = defineStore("user", {
       this.autoLogout = payload.autoLogout;
       // state.tokenExpiration = payload.tokenExpiration;
     },
+
+    //tryLogin will attempt to get user credentials out of local storage.
     async tryLogin() {
       const userid = localStorage.getItem("userId");
       const token = localStorage.getItem("token");
@@ -85,14 +94,41 @@ export const useStore = defineStore("user", {
         });
       }
     },
-    // async setUser2(context, payload) {
-    //   this.setUser( {
-    //     userId: payload.uid,
-    //     uid: payload.uid,
-    //     token: payload.token,
-    //     //tokenExpiration: payload.tokenExpiration,
-    //   });
-    //},
+    async IncrementLoginAttempts() {
+      const attempts = localStorage.getItem("loginAttempts");
+      const newAttempts = parseInt(attempts) + 1;
+      localStorage.setItem("loginAttempts", newAttempts);
+    },
+
+    async loginWithUser(user) {
+      console.log("user", user);
+      this.IncrementLoginAttempts();
+
+      const token = user.stsTokenManager.accessToken; //await user.getIdToken();
+      const uid = user.uid;
+      const expirationTime = user.stsTokenManager.expirationTime;
+      console.log("token", token);
+      localStorage.setItem("userId", uid);
+      localStorage.setItem("token", token);
+      localStorage.setItem("tokenExpiration", expirationTime.toString());
+      //we know the token expires in 60 minutes, convert from milliseconds to minutes.
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      //set the timer to logout when the token expires.
+      //I tested this with a 5 second expiration, and it worked.
+      timer = setTimeout(function () {
+        console.log("timer expiring");
+      }, 1000 * 60 * 60);
+      this.setUser({
+        userId: uid,
+        uid: uid,
+        token: token, //user.stsTokenManager.accessToken,
+        //tokenExpiration: user.stsTokenManager.expirationTime,
+      });
+    },
+
     async login(payload) {
       console.log("login", payload);
 
@@ -105,11 +141,8 @@ export const useStore = defineStore("user", {
       const user = userCredential.user;
       console.log("user", user);
 
-      localStorage.setItem("userId", userCredential.user.uid);
-      localStorage.setItem(
-        "token",
-        userCredential.user.stsTokenManager.accessToken
-      );
+      localStorage.setItem("userId", user.uid);
+      localStorage.setItem("token", user.stsTokenManager.accessToken);
       localStorage.setItem(
         "tokenExpiration",
         userCredential.user.stsTokenManager.expirationTime
@@ -227,6 +260,8 @@ export const useStore = defineStore("user", {
       if (timer) {
         clearTimeout(timer);
       }
+      //this.loginAttempts = 0;
+      localStorage.removeItem("loginAttempts");
       localStorage.removeItem("userId");
       localStorage.removeItem("token");
       localStorage.removeItem("tokenExpiration");

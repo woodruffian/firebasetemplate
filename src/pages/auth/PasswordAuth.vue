@@ -30,6 +30,14 @@ import { useStore } from '../../store/index.js';
 import BaseButton from '../../components/ui/BaseButton.vue';
 //import { signInWithPopup } from 'firebase/auth';
 import { useRoute, useRouter } from 'vue-router';
+
+import {
+    //createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    //setPersistence,
+    //browserSessionPersistence,
+} from "firebase/auth";
+import { auth } from "../../firebaseApp";
 //console.log('in passwordauth');
 const store = useStore();
 const email = ref('');
@@ -64,7 +72,14 @@ const submitForm = async () => {
     try {
         if (mode.value === 'login') {
             //await store.dispatch('login', formData);
-            await store.login(formData);
+
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                email.value,
+                password.value
+            );
+            const user = userCredential.user;
+            await store.loginWithUser(user); //store.login(formData);
         } else {
             //await store.dispatch('signup', formData);
             await store.signup(formData);

@@ -1,15 +1,17 @@
 <template>
-    <h1>TODOS</h1>
+    <div v-if="store.isAuthenticated">
+        <h1>TODOS</h1>
 
-    Add Todo:
-    <input type="text" v-model="newTodo" /><button @click="handleAddTodo">Add</button>
-    <ul v-if="!pending">
-        <li v-for="todo in todos" :key="todo.id">
-            <span>{{ todo.text }} ( {{ todo.id }}), {{ todo.done }}</span>
-            <button @click="handleUpdateTodo(todo.id)">Update to bob</button>
-            <button @click="handleRemoveTodo(todo.id)">DELETE</button>
-        </li>
-    </ul>
+        Add Todo:
+        <input type="text" v-model="newTodo" /><button @click="handleAddTodo">Add</button>
+        <ul v-if="!pending">
+            <li v-for="todo in todos" :key="todo.id">
+                <span>{{ todo.text }} ( {{ todo.id }}), {{ todo.done }}</span>
+                <button @click="handleUpdateTodo(todo.id)">Update to bob</button>
+                <button @click="handleRemoveTodo(todo.id)">DELETE</button>
+            </li>
+        </ul>
+    </div>
 </template>
 
 <script setup>
@@ -23,11 +25,11 @@ import { useDatabaseList, useDatabaseObject } from 'vuefire'
 //push adds, set updates.
 import { push, set, remove } from 'firebase/database';
 import { ref as dbRef } from 'firebase/database'
-//import { useStore } from '@/store';
+import { useStore } from '@/store';
 //both of these work
 //const todos = useDatabaseList(todosRef)
 //const todos = useDatabaseList(dbRef(db, 'todos'))
-//const store = useStore();
+const store = useStore();
 //const token = computed(() => store.token);
 
 //these single item objects work, but if I refresh page, they both come back undefined.
