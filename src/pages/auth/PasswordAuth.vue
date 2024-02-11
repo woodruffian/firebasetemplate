@@ -27,7 +27,6 @@
 import { ref, computed } from 'vue';
 //import store from '../../store/index.js';
 import { useStore } from '../../store/index.js';
-import BaseButton from '../../components/ui/BaseButton.vue';
 //import { signInWithPopup } from 'firebase/auth';
 import { useRoute, useRouter } from 'vue-router';
 

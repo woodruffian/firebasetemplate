@@ -5,6 +5,9 @@ import NotFound from "./pages/NotFound.vue";
 import AuthForm from "./pages/auth/UserAuth.vue";
 import PasswordAuthForm from "./pages/auth/PasswordAuth.vue";
 import GoogleAuthForm from "./pages/auth/GoogleAuth.vue";
+import FacebookAuthForm from "./pages/auth/FacebookAuth.vue";
+import RegisterForm from "./pages/RegisterUser.vue";
+//import MicrosoftAuthForm from "./pages/auth/MicrosoftAuth.vue";
 //import store from "./store/index.js";
 import { useStore } from "./store";
 const router = createRouter({
@@ -23,6 +26,21 @@ const router = createRouter({
       name: "passwordauth",
     },
     { path: "/auth/google", component: GoogleAuthForm, name: "googleauth" },
+    {
+      path: "/auth/facebook",
+      component: FacebookAuthForm,
+      name: "facebookauth",
+    },
+    {
+      path: "/register",
+      component: RegisterForm,
+      name: "register",
+    },
+    // {
+    //   path: "/auth/microsoft",
+    //   component: MicrosoftAuthForm,
+    //   name: "microsoftauth",
+    // },
 
     { path: "/:notFound(.*)", component: NotFound },
   ],
@@ -36,22 +54,48 @@ const router = createRouter({
 //     }
 //   });
 
+//if the user has not authenticated, force them to the auth page.
+//if they are not registered (after authentication), force them to the register page.
 router.beforeEach(async (to, _from, next) => {
-  console.log("to:", to);
+  //console.log("to:", to);
 
   const store = useStore();
-  if (to.fullPath.includes("auth")) {
-    if (store.isAuthenticated) {
-      next({ name: "todos" });
+  if (store.isAuthenticated) {
+    if (store.isRegistered) {
+      if (to.fullPath.includes("auth")) {
+        next({ name: "todos" });
+        return;
+      }
+      next();
       return;
+    } else {
+      if (to.fullPath.includes("register")) {
+        next();
+        return;
+      }
+      next({ name: "register" });
     }
   } else {
-    if (!store.isAuthenticated && !to.fullPath.includes("auth")) {
-      next({ name: "auth" });
+    if (to.fullPath.includes("auth")) {
+      next();
       return;
     }
+    next({ name: "auth" });
+    return;
   }
-  next();
+
+  // if (to.fullPath.includes("auth")) {
+  //   if (store.isAuthenticated) {
+  //     next({ name: "todos" });
+  //     return;
+  //   }
+  // } else {
+  //   if (!store.isAuthenticated && !to.fullPath.includes("auth")) {
+  //     next({ name: "auth" });
+  //     return;
+  //   }
+  // }
+  // next();
 });
 
 export default router;

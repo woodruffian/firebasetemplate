@@ -1,6 +1,18 @@
 <template>
+    <base-dialog :show="!!error" title="An error occurred" @close="handleError">
+        <p>{{ error }}</p>
+    </base-dialog>
+    <base-dialog :show="isLoading" title="Authenticating..." fixed>
+        <base-spinner></base-spinner>
+    </base-dialog>
     <base-card>
-        <h1>GOOGLE Authentication</h1>
+        <h1>YO: {{ authenticated }}</h1>
+        <form @submit.prevent="submitForm">
+
+
+            <base-button>{{ buttonLabel }}</base-button>
+            <base-button type="button" mode="flat" @click="switchAuthMode">{{ switchButtonLabel }}</base-button>
+        </form>
     </base-card>
 </template>
 <script setup>
@@ -15,13 +27,13 @@ import { useRoute, useRouter } from 'vue-router';
 import {
     signInWithPopup,
     //signOut,
-    GoogleAuthProvider,
+    FacebookAuthProvider,
     //signInWithRedirect, getRedirectResult
 } from 'firebase/auth'
 //import { ref as dbRef } from "firebase/database";
 const router = useRouter();
 const route = useRoute();
-const provider = new GoogleAuthProvider()
+const provider = new FacebookAuthProvider()
 provider.addScope('profile')
 provider.addScope('email')
 //...
@@ -66,10 +78,12 @@ async function signinPopup() {
         console.error('Failed sign', reason)
         error.value = reason
     })
+    console.log('userCredential', userCredential);
+    const yo = window.confirm(store.loginAttempts);
+    console.log('yo', yo);
     const user = userCredential.user;
-    console.log('usercredential', userCredential)
-    //console.log('user', user);
-    await store.loginWithUser(user);
+    console.log('user', user);
+    await store.loginWithUser(userCredential.user);
 
     // store.setUser({
     //     id: user.uid,

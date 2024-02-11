@@ -15,13 +15,16 @@
 // <li v-if="authenticated"><router-link to="/requests">All Requests</router-link></li>
 // <li v-else><router-link to="/auth">Login</router-link></li>
 // <li v-if="authenticated"><base-button @click="logout">Log out</base-button></li>
-import { computed } from 'vue';
+
 //import { defineStore } from 'pinia'
 //import BaseButton from '../components/ui/BaseButton.vue';
+import { computed } from 'vue';
 const authenticated = computed(() => store.isAuthenticated);
 import { useRouter, useRoute } from 'vue-router';
+//import { useCurrentUser } from "vuefire";
 const router = useRouter();
 const route = useRoute();
+
 
 // }
 // watchEffect(() => {
@@ -29,6 +32,7 @@ const route = useRoute();
 // });
 import { ref } from 'vue';
 import { useStore } from '../store/index.js';
+//import { auth } from '@/firebaseApp';
 const userid = ref('');
 const store = useStore();
 //console.log('made it here')
@@ -36,6 +40,7 @@ userid.value = store.userid;
 //console.log('userid in theheader', userid.value);
 
 const logout = () => {
+    //console.log('getting ready to logout')
     store.logout();
     const redirectUrl = '/' + (route.query.redirect || 'auth');
     //console.log('redirectUrl', redirectUrl);

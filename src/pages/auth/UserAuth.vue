@@ -4,6 +4,10 @@
         <router-link :to="googlepath">
             <base-button>Google</base-button>
         </router-link>
+        <router-link :to="facebookpath">
+            <base-button>Facebook</base-button>
+        </router-link>
+
         <router-link :to="pwpath">
             <base-button>Password</base-button>
         </router-link>
@@ -16,6 +20,8 @@ import BaseButton from '../../components/ui/BaseButton.vue';
 
 const pwpath = { name: 'passwordauth' };
 const googlepath = { name: 'googleauth' };
+const facebookpath = { name: 'facebookauth' };
+//const microsoftpath = { name: 'microsoftauth' };
 </script>
 <style scoped>
 form {

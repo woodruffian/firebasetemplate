@@ -1,16 +1,21 @@
 import { defineStore } from "pinia";
 import {
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  //signInWithEmailAndPassword,
   //setPersistence,
   //browserSessionPersistence,
 } from "firebase/auth";
 import { auth } from "../firebaseApp";
+
+import UserService from "../services/userService.js";
+//import { useCurrentUser } from "vuefire";
 //import dayjs from "dayjs";
 //import coachesModule from './modules/coaches/index.js';
 //import requestsModule from './modules/requests/index.js';
 //import { authModule } from "./modules/auth/index.js";
 let timer;
+//const user = useCurrentUser(auth);
+const userService = new UserService();
 
 export const useStore = defineStore("user", {
   state: () => ({
@@ -20,14 +25,21 @@ export const useStore = defineStore("user", {
     //loginAttempts: 0,
     //tokenExpiration: null,
     setAutoLogout: false,
+    registered: false,
+    email: "",
+    userName: "",
+    emailVerified: false,
   }),
   getters: {
     isAuthenticated() {
       return !!this.token;
     },
+    isRegistered() {
+      return !!this.registered;
+    },
 
     loginAttempts() {
-      const attempts = localStorage.getItem("loginAttempts");
+      const attempts = localStorage.getItem("loginAttempts") ?? 0;
       return parseInt(attempts) || 0;
     },
     // userId(state) {
@@ -59,6 +71,9 @@ export const useStore = defineStore("user", {
       this.uid = payload.userId;
       this.token = payload.token;
       this.autoLogout = payload.autoLogout;
+      this.email = payload.email;
+      this.emailVerified = payload.emailVerified;
+      //this.registered = payload.registered;
       // state.tokenExpiration = payload.tokenExpiration;
     },
 
@@ -94,10 +109,16 @@ export const useStore = defineStore("user", {
         });
       }
     },
+
     async IncrementLoginAttempts() {
-      const attempts = localStorage.getItem("loginAttempts");
+      const attempts = localStorage.getItem("loginAttempts") || 0;
       const newAttempts = parseInt(attempts) + 1;
+      console.log("newAttempts", newAttempts);
       localStorage.setItem("loginAttempts", newAttempts);
+    },
+
+    async ClearLoginAttempts() {
+      localStorage.removeItem("loginAttempts");
     },
 
     async loginWithUser(user) {
@@ -106,11 +127,19 @@ export const useStore = defineStore("user", {
 
       const token = user.stsTokenManager.accessToken; //await user.getIdToken();
       const uid = user.uid;
-      const expirationTime = user.stsTokenManager.expirationTime;
-      console.log("token", token);
-      localStorage.setItem("userId", uid);
-      localStorage.setItem("token", token);
-      localStorage.setItem("tokenExpiration", expirationTime.toString());
+      //const expirationTime = user.stsTokenManager.expirationTime;
+      const email = user.email;
+      const emailVerified = user.emailVerified;
+
+      //const displayName = user.displayName;
+      //console.log("token", token);
+      // localStorage.setItem("userId", uid);
+      // localStorage.setItem("token", token);
+      // localStorage.setItem("tokenExpiration", expirationTime.toString());
+      // localStorage.setItem("email", email);
+      // localStorage.setItem("emailVerified", emailVerified);
+      // localStorage.setItem("Chicken", "Chicken");
+
       //we know the token expires in 60 minutes, convert from milliseconds to minutes.
       if (timer) {
         clearTimeout(timer);
@@ -123,59 +152,23 @@ export const useStore = defineStore("user", {
       }, 1000 * 60 * 60);
       this.setUser({
         userId: uid,
-        uid: uid,
-        token: token, //user.stsTokenManager.accessToken,
+        uid,
+        token, //user.stsTokenManager.accessToken,
+        email,
+        emailVerified,
+        //displayName: displayName,
         //tokenExpiration: user.stsTokenManager.expirationTime,
       });
-    },
 
-    async login(payload) {
-      console.log("login", payload);
-
-      //try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        payload.email,
-        payload.password
-      );
-      const user = userCredential.user;
-      console.log("user", user);
-
-      localStorage.setItem("userId", user.uid);
-      localStorage.setItem("token", user.stsTokenManager.accessToken);
-      localStorage.setItem(
-        "tokenExpiration",
-        userCredential.user.stsTokenManager.expirationTime
-      );
-
-      //we know the token expires in 60 minutes, convert from milliseconds to minutes.
-      if (timer) {
-        clearTimeout(timer);
-        timer = null;
+      //see if the user is registered
+      const userData = await userService.getUser(uid);
+      if (userData) {
+        this.registered = userData.registered;
+        userData.lastLoginAt = Date.now();
+        userService.updateUser(uid, userData);
+      } else {
+        this.registered = false;
       }
-      //set the timer to logout when the token expires.
-      //I tested this with a 5 second expiration, and it worked.
-      timer = setTimeout(function () {
-        console.log("timer expiring");
-      }, 1000 * 60 * 60);
-      this.setUser({
-        userId: user.uid,
-        uid: user.uid,
-        token: user.stsTokenManager.accessToken,
-        tokenExpiration: user.stsTokenManager.expirationTime,
-      });
-
-      //!!!!token expiration is 60 minutes. !!!!!
-      //console.log('expiration', context.state.tokenExpiration);
-      //const now = new Date();
-      // const now = Date.now();
-      // const diff = context.state.tokenExpiration - now;
-      // console.log('diff', diff);
-      //} catch (err) {
-      //console.log('throwing an error');
-      //console.log('err', err);
-      //  throw err;
-      //}
     },
 
     async signup(payload) {
@@ -189,16 +182,16 @@ export const useStore = defineStore("user", {
       );
 
       //const expirationDate = new Date().getTime() + 1000 * 60 * 60;
-      localStorage.setItem("userId", userCredential.user.uid);
-      localStorage.setItem(
-        "token",
-        userCredential.user.stsTokenManager.accessToken
-      );
+      // localStorage.setItem("userId", userCredential.user.uid);
+      // localStorage.setItem(
+      //   "token",
+      //   userCredential.user.stsTokenManager.accessToken
+      // );
       //localStorage.setItem('tokenExpiration', expirationDate);
-      localStorage.setItem(
-        "tokenExpiration",
-        userCredential.user.stsTokenManager.expirationTime
-      );
+      // localStorage.setItem(
+      //   "tokenExpiration",
+      //   userCredential.user.stsTokenManager.expirationTime
+      // );
 
       const user = userCredential.user;
       this.setUser({
@@ -260,18 +253,22 @@ export const useStore = defineStore("user", {
       if (timer) {
         clearTimeout(timer);
       }
+      this.ClearLoginAttempts();
       //this.loginAttempts = 0;
-      localStorage.removeItem("loginAttempts");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("token");
-      localStorage.removeItem("tokenExpiration");
+      // localStorage.removeItem("loginAttempts");
+      // localStorage.removeItem("userId");
+      // localStorage.removeItem("token");
+      // localStorage.removeItem("tokenExpiration");
       this.setUser({
         userId: null,
         uid: null,
         token: null,
         tokenExpiration: null,
         autoLogout: false,
+        //registered: false,
       });
+
+      this.registered = false;
     },
   },
 });
