@@ -62,6 +62,14 @@ async function signinPopup() {
 
     //error.value = null
     //await signInWithRedirect(auth, googleAuthProvider);
+
+    /* 2024-02-26:
+
+    https://firebase.google.com/docs/auth/web/redirect-best-practices
+
+    According to this document, signinwithPopup is the best practice for web apps.  It's not going to be affected
+    by the third party cookie issues that signinWithRedirect is.
+    */
     const userCredential = await signInWithPopup(auth, provider).catch((reason) => {
         console.error('Failed sign', reason)
         error.value = reason

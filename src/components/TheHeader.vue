@@ -18,13 +18,13 @@
 
 //import { defineStore } from 'pinia'
 //import BaseButton from '../components/ui/BaseButton.vue';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 const authenticated = computed(() => store.isAuthenticated);
 import { useRouter, useRoute } from 'vue-router';
-//import { useCurrentUser } from "vuefire";
+import { useCurrentUser } from "vuefire";
 const router = useRouter();
 const route = useRoute();
-
+let _user = null;
 
 // }
 // watchEffect(() => {
@@ -39,8 +39,22 @@ const store = useStore();
 userid.value = store.userid;
 //console.log('userid in theheader', userid.value);
 
+watch(authenticated, (value) => {
+    //console.log('authenticated in theheader', value);
+    if (value) {
+        _user = useCurrentUser();
+    }
+});
+
+
 const logout = () => {
+    if (_user) {
+        console.log('user in theheader', _user.value.displayName);
+    }
     //console.log('getting ready to logout')
+    //this works.
+    //const user = useCurrentUser();
+    //console.log('user in theheader', user.value.displayName);
     store.logout();
     const redirectUrl = '/' + (route.query.redirect || 'auth');
     //console.log('redirectUrl', redirectUrl);
